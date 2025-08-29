@@ -20,6 +20,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Redirect to home page or intended destination
-  return NextResponse.redirect(new URL('/', requestUrl.origin));
+  // Redirect to dashboard after successful authentication
+  return NextResponse.redirect(new URL('/dashboard', requestUrl.origin));
 }

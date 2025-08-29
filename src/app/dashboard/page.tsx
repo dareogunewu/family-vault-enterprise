@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Shield, Key, FileText, Users, Activity, Settings } from 'lucide-react';
@@ -9,19 +11,29 @@ import Link from 'next/link';
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    // Check authentication
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      window.location.href = '/login';
-      return;
-    }
+    const checkAuth = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error || !user) {
+          router.push('/auth/login');
+          return;
+        }
 
-    // In a real app, you'd validate the token and get user info
-    setUser({ name: 'John Doe', email: 'john@example.com', role: 'admin' });
-    setIsLoading(false);
-  }, []);
+        setUser(user);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        router.push('/auth/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   if (isLoading) {
     return (
@@ -42,13 +54,15 @@ export default function DashboardPage() {
               <h1 className="text-xl font-semibold text-gray-900">Family Vault Enterprise</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">Welcome, John Doe</span>
+              <span className="text-sm text-gray-700">
+                Welcome, {user?.user_metadata?.name || user?.email}
+              </span>
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => {
-                  localStorage.removeItem('authToken');
-                  window.location.href = '/login';
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  router.push('/auth/login');
                 }}
               >
                 Logout
