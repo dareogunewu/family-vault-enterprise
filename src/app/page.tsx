@@ -15,13 +15,13 @@ export default function Home() {
           </div>
           <div className="space-x-4">
             <Link 
-              href="/login"
+              href="/auth/login"
               className="text-white hover:text-blue-200 font-medium transition-colors"
             >
               Sign In
             </Link>
             <Link 
-              href="/register"
+              href="/auth/register"
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
               Get Started
@@ -42,14 +42,14 @@ export default function Home() {
           </p>
           <div className="space-x-4">
             <Link 
-              href="/register"
+              href="/auth/register"
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors inline-flex items-center"
             >
               <Key className="mr-2 h-5 w-5" />
               Start Free Trial
             </Link>
             <Link 
-              href="/login"
+              href="/auth/login"
               className="border border-white text-white hover:bg-white hover:text-blue-900 px-8 py-3 rounded-lg text-lg font-semibold transition-colors inline-flex items-center"
             >
               <Shield className="mr-2 h-5 w-5" />
@@ -132,14 +132,14 @@ export default function Home() {
             </p>
             <div className="space-x-4">
               <Link 
-                href="/register"
+                href="/auth/register"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors inline-flex items-center"
               >
                 <Key className="mr-2 h-5 w-5" />
                 Start Your Free Trial
               </Link>
               <Link 
-                href="/login"
+                href="/auth/login"
                 className="text-white hover:text-blue-200 font-medium transition-colors"
               >
                 Already have an account? Sign in →
