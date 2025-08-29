@@ -11,6 +11,12 @@ import Link from 'next/link';
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    passwords: 0,
+    documents: 0,
+    familyMembers: 1,
+    uptime: '99.9%'
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -24,6 +30,7 @@ export default function DashboardPage() {
         }
 
         setUser(user);
+        loadUserStats(user.id);
       } catch (error) {
         console.error('Auth check error:', error);
         router.push('/auth/login');
@@ -34,6 +41,27 @@ export default function DashboardPage() {
 
     checkAuth();
   }, [router]);
+
+  const loadUserStats = (userId: string) => {
+    try {
+      // Load passwords count
+      const passwords = localStorage.getItem(`passwords_${userId}`);
+      const passwordCount = passwords ? JSON.parse(passwords).length : 0;
+
+      // Load documents count  
+      const documents = localStorage.getItem(`documents_${userId}`);
+      const documentCount = documents ? JSON.parse(documents).length : 0;
+
+      setStats({
+        passwords: passwordCount,
+        documents: documentCount,
+        familyMembers: 1, // For now, just the current user
+        uptime: '99.9%'
+      });
+    } catch (error) {
+      console.error('Error loading user stats:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -85,7 +113,7 @@ export default function DashboardPage() {
             <CardContent className="flex items-center p-6">
               <Key className="h-8 w-8 text-blue-600 mr-4" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">42</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.passwords}</p>
                 <p className="text-gray-600">Passwords</p>
               </div>
             </CardContent>
@@ -95,7 +123,7 @@ export default function DashboardPage() {
             <CardContent className="flex items-center p-6">
               <FileText className="h-8 w-8 text-green-600 mr-4" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">18</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.documents}</p>
                 <p className="text-gray-600">Documents</p>
               </div>
             </CardContent>
@@ -105,7 +133,7 @@ export default function DashboardPage() {
             <CardContent className="flex items-center p-6">
               <Users className="h-8 w-8 text-purple-600 mr-4" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">4</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.familyMembers}</p>
                 <p className="text-gray-600">Family Members</p>
               </div>
             </CardContent>
@@ -115,7 +143,7 @@ export default function DashboardPage() {
             <CardContent className="flex items-center p-6">
               <Activity className="h-8 w-8 text-orange-600 mr-4" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">99.9%</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.uptime}</p>
                 <p className="text-gray-600">Uptime</p>
               </div>
             </CardContent>
