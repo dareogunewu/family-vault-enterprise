@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-// import { Badge } from '@/components/ui/badge';
-import { FileText, Upload, Download, Eye, Share2, Trash2, ArrowLeft, File, Image, FileVideo, X, Plus, AlertCircle } from 'lucide-react';
+import { FileText, Upload, Download, Eye, Share2, Trash2, ArrowLeft, File, Image, FileVideo, X, Plus, AlertCircle, Loader } from 'lucide-react';
 import Link from 'next/link';
-import { useVault } from '@/hooks/useVault';
 
 interface Document {
   id: string;
@@ -20,9 +20,13 @@ interface Document {
   sharedWith: string[];
   encrypted: boolean;
   signed: boolean;
+  user_id?: string;
 }
 
 export default function DocumentsPage() {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -34,97 +38,51 @@ export default function DocumentsPage() {
   });
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
-  
-  const { addDocument, isLoading, error } = useVault();
+  const router = useRouter();
 
-  // Default documents data
-  const defaultDocuments: Document[] = [
-    {
-      id: '1',
-      name: 'Last_Will_Testament.pdf',
-      type: 'pdf',
-      size: '2.4 MB',
-      category: 'Legal',
-      uploadDate: '2024-01-15',
-      sharedWith: ['spouse', 'lawyer'],
-      encrypted: true,
-      signed: true
-    },
-    {
-      id: '2',
-      name: 'Insurance_Policy_Life.pdf',
-      type: 'pdf',
-      size: '1.8 MB',
-      category: 'Insurance',
-      uploadDate: '2024-01-12',
-      sharedWith: ['spouse'],
-      encrypted: true,
-      signed: false
-    },
-    {
-      id: '3',
-      name: 'Birth_Certificate_John.pdf',
-      type: 'pdf',
-      size: '856 KB',
-      category: 'Personal',
-      uploadDate: '2024-01-10',
-      sharedWith: [],
-      encrypted: true,
-      signed: false
-    },
-    {
-      id: '4',
-      name: 'House_Deed.pdf',
-      type: 'pdf',
-      size: '3.2 MB',
-      category: 'Property',
-      uploadDate: '2024-01-08',
-      sharedWith: ['spouse', 'lawyer'],
-      encrypted: true,
-      signed: true
-    },
-    {
-      id: '5',
-      name: 'Passport_Copy.jpg',
-      type: 'image',
-      size: '2.1 MB',
-      category: 'Personal',
-      uploadDate: '2024-01-05',
-      sharedWith: [],
-      encrypted: true,
-      signed: false
-    },
-    {
-      id: '6',
-      name: 'Tax_Returns_2023.pdf',
-      type: 'pdf',
-      size: '4.5 MB',
-      category: 'Financial',
-      uploadDate: '2024-01-03',
-      sharedWith: ['accountant'],
-      encrypted: true,
-      signed: false
-    }
-  ];
-
-  const [documents, setDocuments] = useState<Document[]>([]);
-
-  // Load documents from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('family-vault-documents');
-    if (stored) {
-      setDocuments(JSON.parse(stored));
-    } else {
-      setDocuments(defaultDocuments);
-    }
+    checkAuthAndLoadDocuments();
   }, []);
 
-  // Save to localStorage whenever documents change
-  useEffect(() => {
-    if (documents.length > 0) {
-      localStorage.setItem('family-vault-documents', JSON.stringify(documents));
+  const checkAuthAndLoadDocuments = async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user) {
+        router.push('/auth/login');
+        return;
+      }
+
+      setUser(user);
+      await loadUserDocuments(user.id);
+    } catch (error) {
+      console.error('Auth check error:', error);
+      router.push('/auth/login');
     }
-  }, [documents]);
+  };
+
+  const loadUserDocuments = async (userId: string) => {
+    try {
+      const savedDocuments = localStorage.getItem(`documents_${userId}`);
+      if (savedDocuments) {
+        setDocuments(JSON.parse(savedDocuments));
+      } else {
+        setDocuments([]);
+      }
+    } catch (error) {
+      console.error('Error loading documents:', error);
+      setDocuments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveDocumentsToStorage = (updatedDocuments: Document[]) => {
+    if (!user) return;
+    localStorage.setItem(`documents_${user.id}`, JSON.stringify(updatedDocuments));
+    setDocuments(updatedDocuments);
+  };
+
 
   const categories = ['all', 'Legal', 'Insurance', 'Personal', 'Property', 'Financial'];
   const documentCategories = ['Legal', 'Insurance', 'Personal', 'Property', 'Financial', 'Medical', 'Other'];
@@ -185,10 +143,12 @@ export default function DocumentsPage() {
         uploadDate: new Date().toISOString().split('T')[0],
         sharedWith: [],
         encrypted: true,
-        signed: false
+        signed: false,
+        user_id: user?.id
       };
       
-      setDocuments([newDocument, ...documents]);
+      const updatedDocuments = [newDocument, ...documents];
+      saveDocumentsToStorage(updatedDocuments);
       setShowUploadModal(false);
       setUploadForm({ name: '', category: '', notes: '', file: null });
     } catch (error) {
@@ -214,7 +174,8 @@ export default function DocumentsPage() {
 
   const handleDeleteDocument = (docId: string) => {
     if (confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
-      setDocuments(documents.filter(d => d.id !== docId));
+      const updatedDocuments = documents.filter(d => d.id !== docId);
+      saveDocumentsToStorage(updatedDocuments);
     }
   };
 
@@ -257,6 +218,17 @@ export default function DocumentsPage() {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading your documents...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
