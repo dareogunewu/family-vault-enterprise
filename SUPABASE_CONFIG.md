@@ -1,12 +1,26 @@
 # Supabase Configuration Guide
 
-## Fix Email Confirmation Redirect
+## URGENT: Update Environment Variables
 
-The email confirmation currently redirects to `localhost:3000`. To fix this:
+Your current Supabase project URL is: `https://ddkghjvvlihtkdfqbifi.supabase.co`
 
-### 1. Update Site URL in Supabase
+## Fix Authentication Issues
 
-Go to: https://supabase.com/dashboard/project/anrhqraxiqgpxraeglln/auth/url-configuration
+### 1. Update Environment Variables in Vercel
+
+Go to: https://vercel.com/dareogunewus-projects/family-vault-enterprise/settings/environment-variables
+
+**Update these environment variables:**
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://ddkghjvvlihtkdfqbifi.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-from-ddkghjvvlihtkdfqbifi-project
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-from-ddkghjvvlihtkdfqbifi-project
+```
+
+### 2. Update Site URL in Supabase
+
+Go to: https://supabase.com/dashboard/project/ddkghjvvlihtkdfqbifi/auth/url-configuration
 
 **Set these URLs:**
 
@@ -15,28 +29,18 @@ Go to: https://supabase.com/dashboard/project/anrhqraxiqgpxraeglln/auth/url-conf
   - `https://family-vault-enterprise-8eghgtk7o-dareogunewus-projects.vercel.app/**`
   - `https://family-vault-enterprise-8eghgtk7o-dareogunewus-projects.vercel.app/auth/callback`
 
-### 2. Configure OAuth Redirect (if using Google signin)
+### 3. Configure OAuth Redirect (if using Google signin)
 
 **Allowed redirect URLs:**
 - `https://family-vault-enterprise-8eghgtk7o-dareogunewus-projects.vercel.app/auth/callback`
 
-### 3. Email Template Configuration
+### 4. Email Template Configuration
 
-Go to: https://supabase.com/dashboard/project/anrhqraxiqgpxraeglln/auth/templates
+Go to: https://supabase.com/dashboard/project/ddkghjvvlihtkdfqbifi/auth/templates
 
 **Confirm signup template** should use:
 ```
 {{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup&redirect_to={{ .SiteURL }}
-```
-
-### 4. Required Environment Variables
-
-Make sure these are set in Vercel:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=https://anrhqraxiqgpxraeglln.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 ```
 
 After making these changes:
