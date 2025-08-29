@@ -11,6 +11,25 @@ export default function Home() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Check if this is an OAuth callback with code
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      
+      if (code) {
+        try {
+          // Exchange code for session
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (!error) {
+            // Successful OAuth login, redirect to dashboard
+            router.push('/dashboard');
+            return;
+          }
+        } catch (error) {
+          console.error('OAuth callback error:', error);
+        }
+      }
+
+      // Regular auth check
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         router.push('/dashboard');
