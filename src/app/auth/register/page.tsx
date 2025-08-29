@@ -93,17 +93,16 @@ export default function RegisterPage() {
       }
 
       if (data.user) {
-        // For now, store the encrypted keys in localStorage
-        // In production, these would be stored after email verification
+        // Store the encrypted keys in localStorage for later use
         localStorage.setItem('temp_master_key_hash', masterKeyHash);
         localStorage.setItem('temp_encrypted_user_key', JSON.stringify({
           data: encryptedUserKey.data,
           iv: encryptedUserKey.iv,
         }));
         
-        // Redirect to a success page or show success message
+        // Show success - redirect to login with message
         setError('');
-        router.push('/auth/login?message=Registration successful! Please check your email to verify your account.');
+        router.push('/auth/login?message=Registration successful! Please check your email to verify your account before signing in.');
       }
     } catch (err) {
       setError('An unexpected error occurred');
