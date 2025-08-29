@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import Link from 'next/link';
@@ -8,64 +8,48 @@ import { Shield, Key, Lock, Users, FileText, Star } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Check if this is an OAuth callback with code
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        
-        if (code) {
-          console.log('Processing OAuth callback with code:', code);
-          console.log('Current URL:', window.location.href);
-          
-          // Show loading state to user
-          document.body.innerHTML = `
-            <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #1e3a8a, #7c3aed, #4338ca);">
-              <div style="text-align: center; color: white;">
-                <div style="width: 40px; height: 40px; border: 4px solid #ffffff30; border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
-                <h2>Signing you in...</h2>
-                <p>Please wait while we complete your login</p>
-              </div>
-              <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-            </div>
-          `;
-          
-          // Exchange code for session
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) {
-            console.error('OAuth callback error:', error);
-            alert('Login failed: ' + error.message);
-            // Reload the page to show normal homepage
-            window.location.href = window.location.pathname;
-            return;
-          }
-          
-          console.log('OAuth success, redirecting to dashboard');
-          // Redirect to dashboard
-          window.location.href = '/dashboard';
-          return;
-        }
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+      
+      if (event === 'SIGNED_IN' && session) {
+        console.log('User signed in successfully, redirecting to dashboard');
+        setIsAuthenticating(true);
+        router.push('/dashboard');
+      }
+    });
 
-        // Regular auth check for already logged in users
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) {
-          console.error('Auth check error:', error);
-          return;
-        }
-        
-        if (user) {
-          console.log('User already authenticated, redirecting to dashboard');
-          router.push('/dashboard');
-        }
-      } catch (error) {
-        console.error('Authentication flow error:', error);
+    // Initial auth check
+    const checkInitialAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        console.log('User already authenticated, redirecting to dashboard');
+        router.push('/dashboard');
       }
     };
 
-    checkAuth();
+    checkInitialAuth();
+
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [router]);
+
+  if (isAuthenticating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+        <div className="text-center text-white">
+          <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-2xl font-bold mb-2">Signing you in...</h2>
+          <p className="text-blue-200">Redirecting to your dashboard</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
       {/* Header */}
