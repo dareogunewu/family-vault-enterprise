@@ -11,28 +11,41 @@ export default function Home() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Check if this is an OAuth callback with code
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      
-      if (code) {
-        try {
+      try {
+        // Check if this is an OAuth callback with code
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code) {
+          console.log('Processing OAuth callback with code:', code);
           // Exchange code for session
           const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (!error) {
-            // Successful OAuth login, redirect to dashboard
-            router.push('/dashboard');
+          if (error) {
+            console.error('OAuth callback error:', error);
+            // Clear the URL and stay on home page
+            window.history.replaceState({}, document.title, window.location.pathname);
             return;
           }
-        } catch (error) {
-          console.error('OAuth callback error:', error);
+          console.log('OAuth success, redirecting to dashboard');
+          // Clear the URL and redirect
+          window.history.replaceState({}, document.title, window.location.pathname);
+          router.push('/dashboard');
+          return;
         }
-      }
 
-      // Regular auth check
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        router.push('/dashboard');
+        // Regular auth check for already logged in users
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error('Auth check error:', error);
+          return;
+        }
+        
+        if (user) {
+          console.log('User already authenticated, redirecting to dashboard');
+          router.push('/dashboard');
+        }
+      } catch (error) {
+        console.error('Authentication flow error:', error);
       }
     };
 
