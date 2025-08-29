@@ -14,7 +14,7 @@ export enum CipherRepromptType {
   None = 0,
   Password = 1,
   Biometric = 2,
-  Yubikey = 3,
+  // Yubikey = 3, // Can be added later
 }
 
 export enum UriMatchType {
@@ -309,7 +309,7 @@ export interface FamilyMemberData {
   joinDate: string;
   lastAccess: string;
   permissions: string[];
-  yubiKeyIds?: string[];
+  // yubiKeyIds?: string[]; // Can be added later for enhanced 2FA
 }
 
 export interface EmergencyAccessData {

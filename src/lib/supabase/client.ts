@@ -1,7 +1,7 @@
 // Supabase client configuration for Family Vault Enterprise
 // Handles authentication and database operations
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 
 // Environment variables validation
@@ -12,13 +12,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// Client-side Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-});
+// Client-side Supabase client using modern SSR approach
+export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
 
 // Database types for TypeScript
 export type Database = {
@@ -31,7 +26,7 @@ export type Database = {
           name: string;
           master_key_hash: string;
           encrypted_user_key: string;
-          yubikey_ids: string[];
+          // yubikey_ids: string[]; // Can be added later
           email_verified: boolean;
           two_factor_enabled: boolean;
           emergency_access_enabled: boolean;
@@ -46,7 +41,7 @@ export type Database = {
           name: string;
           master_key_hash: string;
           encrypted_user_key: string;
-          yubikey_ids?: string[];
+          // yubikey_ids?: string[]; // Can be added later
           email_verified?: boolean;
           two_factor_enabled?: boolean;
           emergency_access_enabled?: boolean;
@@ -61,7 +56,7 @@ export type Database = {
           name?: string;
           master_key_hash?: string;
           encrypted_user_key?: string;
-          yubikey_ids?: string[];
+          // yubikey_ids?: string[]; // Can be added later
           email_verified?: boolean;
           two_factor_enabled?: boolean;
           emergency_access_enabled?: boolean;

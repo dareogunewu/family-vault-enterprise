@@ -42,19 +42,17 @@ export class VaultService {
     collections: [],
   };
 
-  // Initialize vault with master password
-  async initializeVault(email: string, password: string, yubiKeyChallenge?: string): Promise<void> {
+  // Initialize vault with master password (Supabase handles auth)
+  async initializeVault(email: string, password: string): Promise<void> {
     const salt = this.getUserSalt(email);
     
-    // Derive master key using password (and optionally YubiKey)
-    this.vaultState.masterKey = yubiKeyChallenge 
-      ? await cryptoService.deriveKeyWithYubiKey(password, salt, yubiKeyChallenge)
-      : await cryptoService.makeKey(password, salt);
+    // Derive master key using password
+    this.vaultState.masterKey = await cryptoService.makeKey(password, salt);
 
     // Generate user symmetric key (for faster operations)
     this.vaultState.userKey = await cryptoService.generateCipherKey();
 
-    // In real implementation, sync with server
+    // Sync with Supabase database
     await this.syncVault();
   }
 

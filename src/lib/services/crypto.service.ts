@@ -154,12 +154,8 @@ export class CryptoService {
     );
   }
 
-  // YubiKey integration for additional entropy
-  async deriveKeyWithYubiKey(password: string, salt: string, yubikeyChallenge: string): Promise<CryptoKey> {
-    // Combine password with YubiKey challenge for enhanced security
-    const combinedSecret = password + '|' + yubikeyChallenge;
-    return await this.makeKey(combinedSecret, salt);
-  }
+  // Future: YubiKey integration can be added here for enhanced 2FA
+  // For now, using standard password-based authentication via Supabase
 
   // Secure comparison (timing-safe)
   secureCompare(a: string, b: string): boolean {

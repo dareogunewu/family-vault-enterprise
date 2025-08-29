@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   name VARCHAR(255) NOT NULL,
   master_key_hash TEXT NOT NULL,
   encrypted_user_key TEXT NOT NULL,
-  yubikey_ids JSONB DEFAULT '[]'::jsonb,
+  -- yubikey_ids JSONB DEFAULT '[]'::jsonb, -- Can be added later for 2FA
   email_verified BOOLEAN DEFAULT false,
   two_factor_enabled BOOLEAN DEFAULT false,
   emergency_access_enabled BOOLEAN DEFAULT false,
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS public.ciphers (
   encrypted_name TEXT NOT NULL,
   encrypted_notes TEXT,
   favorite BOOLEAN DEFAULT false,
-  reprompt INTEGER DEFAULT 0 CHECK (reprompt IN (0, 1, 2, 3)), -- None, Password, Biometric, Yubikey
+  reprompt INTEGER DEFAULT 0 CHECK (reprompt IN (0, 1, 2)), -- None, Password, Biometric
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE
