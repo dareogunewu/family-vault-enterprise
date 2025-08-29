@@ -93,29 +93,17 @@ export default function RegisterPage() {
       }
 
       if (data.user) {
-        // Store encrypted keys in our users table
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert([
-            {
-              id: data.user.id,
-              email: formData.email,
-              name: formData.name,
-              master_key_hash: masterKeyHash,
-              encrypted_user_key: JSON.stringify({
-                data: encryptedUserKey.data,
-                iv: encryptedUserKey.iv,
-              }),
-            },
-          ]);
-
-        if (profileError) {
-          setError('Failed to create user profile');
-          return;
-        }
-
-        // Show success message or redirect
-        router.push('/auth/verify-email');
+        // For now, store the encrypted keys in localStorage
+        // In production, these would be stored after email verification
+        localStorage.setItem('temp_master_key_hash', masterKeyHash);
+        localStorage.setItem('temp_encrypted_user_key', JSON.stringify({
+          data: encryptedUserKey.data,
+          iv: encryptedUserKey.iv,
+        }));
+        
+        // Redirect to a success page or show success message
+        setError('');
+        router.push('/auth/login?message=Registration successful! Please check your email to verify your account.');
       }
     } catch (err) {
       setError('An unexpected error occurred');
