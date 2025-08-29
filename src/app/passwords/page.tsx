@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-// import { Badge } from '@/components/ui/badge';
-import { Shield, Key, Plus, Eye, EyeOff, Copy, Edit, Trash2, AlertTriangle, ArrowLeft, X, Save } from 'lucide-react';
+import { Shield, Key, Plus, Eye, EyeOff, Copy, Edit, Trash2, AlertTriangle, ArrowLeft, X, Save, Loader } from 'lucide-react';
 import Link from 'next/link';
 
 interface Password {
@@ -18,80 +19,63 @@ interface Password {
   strength: 'weak' | 'medium' | 'strong';
   breached: boolean;
   lastUpdated: string;
+  user_id?: string;
 }
 
 export default function PasswordsPage() {
+  const [passwords, setPasswords] = useState<Password[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [showPassword, setShowPassword] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [editingPassword, setEditingPassword] = useState<string>('');
   const [showAddForm, setShowAddForm] = useState(false);
-  
-  // Default passwords data
-  const defaultPasswords: Password[] = [
-    {
-      id: '1',
-      title: 'Gmail Account',
-      username: 'john@example.com',
-      password: 'MySecurePass123!',
-      url: 'https://gmail.com',
-      category: 'Email',
-      strength: 'strong',
-      breached: false,
-      lastUpdated: '2024-01-15'
-    },
-    {
-      id: '2',
-      title: 'Banking - Chase',
-      username: 'john.doe',
-      password: 'BankPass456$',
-      url: 'https://chase.com',
-      category: 'Banking',
-      strength: 'strong',
-      breached: false,
-      lastUpdated: '2024-01-10'
-    },
-    {
-      id: '3',
-      title: 'Netflix',
-      username: 'family@example.com',
-      password: 'netflix123',
-      url: 'https://netflix.com',
-      category: 'Entertainment',
-      strength: 'weak',
-      breached: true,
-      lastUpdated: '2023-12-20'
-    },
-    {
-      id: '4',
-      title: 'Amazon',
-      username: 'john@example.com',
-      password: 'AmazonSecure789!',
-      url: 'https://amazon.com',
-      category: 'Shopping',
-      strength: 'strong',
-      breached: false,
-      lastUpdated: '2024-01-08'
-    }
-  ];
+  const router = useRouter();
 
-  const [passwords, setPasswords] = useState<Password[]>([]);
-
-  // Load passwords from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('family-vault-passwords');
-    if (stored) {
-      setPasswords(JSON.parse(stored));
-    } else {
-      setPasswords(defaultPasswords);
-    }
+    checkAuthAndLoadPasswords();
   }, []);
 
-  // Save to localStorage whenever passwords change
-  useEffect(() => {
-    if (passwords.length > 0) {
-      localStorage.setItem('family-vault-passwords', JSON.stringify(passwords));
+  const checkAuthAndLoadPasswords = async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user) {
+        router.push('/auth/login');
+        return;
+      }
+
+      setUser(user);
+      await loadUserPasswords(user.id);
+    } catch (error) {
+      console.error('Auth check error:', error);
+      router.push('/auth/login');
     }
-  }, [passwords]);
+  };
+
+  const loadUserPasswords = async (userId: string) => {
+    try {
+      // For now, load from localStorage (we'll implement database later)
+      const savedPasswords = localStorage.getItem(`passwords_${userId}`);
+      if (savedPasswords) {
+        setPasswords(JSON.parse(savedPasswords));
+      } else {
+        setPasswords([]);
+      }
+    } catch (error) {
+      console.error('Error loading passwords:', error);
+      setPasswords([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const savePasswordsToStorage = (updatedPasswords: Password[]) => {
+    if (!user) return;
+    localStorage.setItem(`passwords_${user.id}`, JSON.stringify(updatedPasswords));
+    setPasswords(updatedPasswords);
+  };
+
 
   const [newPassword, setNewPassword] = useState({
     title: '',
@@ -117,10 +101,12 @@ export default function PasswordsPage() {
       category: newPassword.category,
       strength: getPasswordStrength(newPassword.password),
       breached: false,
-      lastUpdated: new Date().toISOString().split('T')[0]
+      lastUpdated: new Date().toISOString().split('T')[0],
+      user_id: user?.id
     };
 
-    setPasswords([...passwords, password]);
+    const updatedPasswords = [...passwords, password];
+    savePasswordsToStorage(updatedPasswords);
     setNewPassword({ title: '', username: '', password: '', url: '', category: 'Personal' });
     setShowAddForm(false);
     alert('Password added successfully!');
@@ -128,7 +114,8 @@ export default function PasswordsPage() {
 
   const handleDeletePassword = (id: string) => {
     if (confirm('Are you sure you want to delete this password?')) {
-      setPasswords(passwords.filter(p => p.id !== id));
+      const updatedPasswords = passwords.filter(p => p.id !== id);
+      savePasswordsToStorage(updatedPasswords);
       alert('Password deleted successfully!');
     }
   };
@@ -151,7 +138,7 @@ export default function PasswordsPage() {
       return;
     }
 
-    setPasswords(passwords.map(p => 
+    const updatedPasswords = passwords.map(p => 
       p.id === editingPassword 
         ? {
             ...p,
@@ -164,8 +151,9 @@ export default function PasswordsPage() {
             lastUpdated: new Date().toISOString().split('T')[0]
           }
         : p
-    ));
+    );
 
+    savePasswordsToStorage(updatedPasswords);
     setNewPassword({ title: '', username: '', password: '', url: '', category: 'Personal' });
     setEditingPassword('');
     setShowAddForm(false);
@@ -207,6 +195,17 @@ export default function PasswordsPage() {
     // In real app, show toast notification
     alert('Copied to clipboard!');
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading your passwords...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
