@@ -18,18 +18,33 @@ export default function Home() {
         
         if (code) {
           console.log('Processing OAuth callback with code:', code);
+          console.log('Current URL:', window.location.href);
+          
+          // Show loading state to user
+          document.body.innerHTML = `
+            <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #1e3a8a, #7c3aed, #4338ca);">
+              <div style="text-align: center; color: white;">
+                <div style="width: 40px; height: 40px; border: 4px solid #ffffff30; border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                <h2>Signing you in...</h2>
+                <p>Please wait while we complete your login</p>
+              </div>
+              <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+            </div>
+          `;
+          
           // Exchange code for session
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
             console.error('OAuth callback error:', error);
-            // Clear the URL and stay on home page
-            window.history.replaceState({}, document.title, window.location.pathname);
+            alert('Login failed: ' + error.message);
+            // Reload the page to show normal homepage
+            window.location.href = window.location.pathname;
             return;
           }
+          
           console.log('OAuth success, redirecting to dashboard');
-          // Clear the URL and redirect
-          window.history.replaceState({}, document.title, window.location.pathname);
-          router.push('/dashboard');
+          // Redirect to dashboard
+          window.location.href = '/dashboard';
           return;
         }
 
