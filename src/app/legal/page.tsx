@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileText, PenTool, Users, Upload, Download, Eye, Share2, ArrowLeft, FileCheck, Scale, Briefcase, UserCheck, AlertCircle } from 'lucide-react';
+import { FileText, PenTool, Users, Upload, Download, Eye, Share2, ArrowLeft, FileCheck, Scale, Briefcase, UserCheck, AlertCircle, Loader } from 'lucide-react';
 import Link from 'next/link';
 
 interface LegalDocument {
@@ -20,9 +22,13 @@ interface LegalDocument {
   lawyerEmail?: string;
   docuSignEnvelopeId?: string;
   size: string;
+  user_id?: string;
 }
 
 export default function LegalDocumentsPage() {
+  const [legalDocuments, setLegalDocuments] = useState<LegalDocument[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -32,68 +38,50 @@ export default function LegalDocumentsPage() {
     lawyerEmail: '',
     notes: ''
   });
+  const router = useRouter();
 
-  const [legalDocuments] = useState<LegalDocument[]>([
-    {
-      id: '1',
-      name: 'Last Will and Testament - John & Jane Doe',
-      type: 'will',
-      status: 'signed',
-      uploadDate: '2024-01-15',
-      signedDate: '2024-01-20',
-      signers: ['John Doe', 'Jane Doe', 'Witness 1', 'Witness 2'],
-      lawyer: 'Robert Smith, Esq.',
-      lawyerEmail: 'robert.smith@lawfirm.com',
-      docuSignEnvelopeId: 'ENV_12345',
-      size: '2.4 MB'
-    },
-    {
-      id: '2',
-      name: 'Revocable Living Trust Agreement',
-      type: 'trust',
-      status: 'witnessed',
-      uploadDate: '2024-01-10',
-      signedDate: '2024-01-18',
-      signers: ['John Doe', 'Jane Doe'],
-      lawyer: 'Robert Smith, Esq.',
-      lawyerEmail: 'robert.smith@lawfirm.com',
-      size: '3.8 MB'
-    },
-    {
-      id: '3',
-      name: 'Durable Power of Attorney - Financial',
-      type: 'power-of-attorney',
-      status: 'notarized',
-      uploadDate: '2024-01-08',
-      signedDate: '2024-01-12',
-      signers: ['John Doe', 'Agent: Jane Doe'],
-      lawyer: 'Sarah Johnson, Esq.',
-      lawyerEmail: 'sarah@estateplanning.com',
-      size: '1.2 MB'
-    },
-    {
-      id: '4',
-      name: 'Advance Healthcare Directive',
-      type: 'healthcare-directive',
-      status: 'signed',
-      uploadDate: '2024-01-05',
-      signedDate: '2024-01-08',
-      signers: ['John Doe', 'Healthcare Agent: Jane Doe'],
-      size: '856 KB'
-    },
-    {
-      id: '5',
-      name: 'Property Purchase Agreement - Family Home',
-      type: 'contract',
-      status: 'executed',
-      uploadDate: '2023-12-20',
-      signedDate: '2024-01-02',
-      signers: ['John Doe', 'Jane Doe', 'Seller', 'Real Estate Agent'],
-      lawyer: 'Michael Brown, Esq.',
-      lawyerEmail: 'mbrown@realestate.com',
-      size: '4.2 MB'
+  useEffect(() => {
+    checkAuthAndLoadDocuments();
+  }, []);
+
+  const checkAuthAndLoadDocuments = async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user) {
+        router.push('/auth/login');
+        return;
+      }
+
+      setUser(user);
+      await loadUserLegalDocuments(user.id);
+    } catch (error) {
+      console.error('Auth check error:', error);
+      router.push('/auth/login');
     }
-  ]);
+  };
+
+  const loadUserLegalDocuments = async (userId: string) => {
+    try {
+      const savedDocs = localStorage.getItem(`legal_documents_${userId}`);
+      if (savedDocs) {
+        setLegalDocuments(JSON.parse(savedDocs));
+      } else {
+        setLegalDocuments([]);
+      }
+    } catch (error) {
+      console.error('Error loading legal documents:', error);
+      setLegalDocuments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveLegalDocumentsToStorage = (updatedDocuments: LegalDocument[]) => {
+    if (!user) return;
+    localStorage.setItem(`legal_documents_${user.id}`, JSON.stringify(updatedDocuments));
+    setLegalDocuments(updatedDocuments);
+  };
 
   const documentTypes = ['all', 'will', 'trust', 'power-of-attorney', 'healthcare-directive', 'contract', 'other'];
 
@@ -155,6 +143,17 @@ export default function LegalDocumentsPage() {
   const handleShareWithLawyer = (doc: LegalDocument) => {
     alert(`Sharing document with lawyer: ${doc.lawyer || 'Legal professional'}\n\nThis would:\n• Grant temporary access\n• Send secure notification\n• Log access for audit trail\n• Set expiration date`);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading legal documents...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
