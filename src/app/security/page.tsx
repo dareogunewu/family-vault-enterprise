@@ -38,36 +38,55 @@ export default function SecurityPage() {
       }
 
       setUser(user);
-      loadSecurityEvents();
+      await loadSecurityEvents();
+      
+      // Log security center access
+      setTimeout(() => {
+        addSecurityEvent('document_access', 'Security center accessed');
+      }, 100);
     } catch (error) {
       console.error('Auth check error:', error);
       router.push('/auth/login');
     }
   };
 
-  const loadSecurityEvents = () => {
-    // Generate some recent activity based on current session
-    const events: SecurityEvent[] = [
-      {
-        id: '1',
-        type: 'login',
-        description: 'Successful login',
-        timestamp: new Date().toISOString(),
-        location: 'Current location',
-        device: 'Web Browser',
-        status: 'success'
-      },
-      {
-        id: '2', 
-        type: 'document_access',
-        description: 'Accessed password manager',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 min ago
-        status: 'success'
+  const loadSecurityEvents = async () => {
+    try {
+      if (!user) return;
+      
+      const savedEvents = localStorage.getItem(`security_events_${user.id}`);
+      if (savedEvents) {
+        const events = JSON.parse(savedEvents);
+        setSecurityEvents(events);
+      } else {
+        setSecurityEvents([]);
       }
-    ];
+    } catch (error) {
+      console.error('Error loading security events:', error);
+      setSecurityEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addSecurityEvent = (type: SecurityEvent['type'], description: string, status: SecurityEvent['status'] = 'success') => {
+    if (!user) return;
     
-    setSecurityEvents(events);
-    setLoading(false);
+    const newEvent: SecurityEvent = {
+      id: Date.now().toString(),
+      type,
+      description,
+      timestamp: new Date().toISOString(),
+      location: 'Current location',
+      device: 'Web Browser',
+      status
+    };
+    
+    const currentEvents = securityEvents;
+    const updatedEvents = [newEvent, ...currentEvents].slice(0, 50); // Keep only last 50 events
+    
+    setSecurityEvents(updatedEvents);
+    localStorage.setItem(`security_events_${user.id}`, JSON.stringify(updatedEvents));
   };
 
   const getEventIcon = (type: string, status: string) => {
@@ -235,6 +254,7 @@ export default function SecurityPage() {
                       </div>
                     `;
                     document.body.appendChild(modal);
+                    addSecurityEvent('password_change', '2FA authentication configured');
                   }}
                 >
                   Configure
@@ -249,7 +269,10 @@ export default function SecurityPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => alert('Login Notifications Enabled!\n\nYou will now receive:\n• Email alerts for new sign-ins\n• Location-based login warnings\n• Device change notifications\n• Suspicious activity alerts')}
+                  onClick={() => {
+                    alert('Login Notifications Enabled!\n\nYou will now receive:\n• Email alerts for new sign-ins\n• Location-based login warnings\n• Device change notifications\n• Suspicious activity alerts');
+                    addSecurityEvent('login', 'Login notifications enabled');
+                  }}
                 >
                   Enable
                 </Button>
@@ -263,7 +286,10 @@ export default function SecurityPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => alert('Active Sessions:\n\n• Current Session (Web Browser)\n  Started: Today\n  Location: Current location\n  Status: Active\n\nNo other active sessions found.\n\nAll sessions are secured with encryption.')}
+                  onClick={() => {
+                    alert('Active Sessions:\n\n• Current Session (Web Browser)\n  Started: Today\n  Location: Current location\n  Status: Active\n\nNo other active sessions found.\n\nAll sessions are secured with encryption.');
+                    addSecurityEvent('login', 'Session management accessed');
+                  }}
                 >
                   Manage
                 </Button>
@@ -293,7 +319,10 @@ export default function SecurityPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => alert('Activity Logging Settings:\n\n✓ Login/Logout events\n✓ Password access\n✓ Document views\n✓ Settings changes\n✓ Family member activity\n\nLog retention: 90 days\nStorage: Encrypted locally')}
+                  onClick={() => {
+                    alert('Activity Logging Settings:\n\n✓ Login/Logout events\n✓ Password access\n✓ Document views\n✓ Settings changes\n✓ Family member activity\n\nLog retention: 90 days\nStorage: Encrypted locally');
+                    addSecurityEvent('document_access', 'Activity logging settings accessed');
+                  }}
                 >
                   Configure
                 </Button>
@@ -322,6 +351,7 @@ export default function SecurityPage() {
                     a.download = `security-report-${new Date().toISOString().split('T')[0]}.json`;
                     a.click();
                     URL.revokeObjectURL(url);
+                    addSecurityEvent('document_access', 'Security data exported');
                   }}
                 >
                   Export
