@@ -198,8 +198,12 @@ export default function SecurityPage() {
                   variant="outline" 
                   size="sm"
                   onClick={() => {
-                    const secret = 'JBSWY3DPEHPK3PXP'; // Example TOTP secret
+                    // Generate a random secret for each user
+                    const secret = Array.from({length: 16}, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'[Math.floor(Math.random() * 32)]).join('');
                     const qrUrl = `otpauth://totp/Family%20Vault:${user?.email}?secret=${secret}&issuer=Family%20Vault`;
+                    
+                    // Use a QR code API to generate the actual QR code image
+                    const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`;
                     
                     const modal = document.createElement('div');
                     modal.style.cssText = `
@@ -207,19 +211,24 @@ export default function SecurityPage() {
                       background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;
                     `;
                     modal.innerHTML = `
-                      <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 400px; text-align: center;">
+                      <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 500px; text-align: center;">
                         <h3 style="margin-bottom: 1rem; font-size: 1.2em; font-weight: bold;">Two-Factor Authentication Setup</h3>
                         <p style="margin-bottom: 1rem; color: #666;">Scan this QR code with your authenticator app:</p>
-                        <div style="margin: 1rem 0; padding: 1rem; background: #f5f5f5; border-radius: 4px;">
-                          <div style="font-family: monospace; font-size: 0.8em; word-break: break-all;">${qrUrl}</div>
+                        <div style="margin: 1rem 0; padding: 1rem; background: #f9f9f9; border-radius: 8px;">
+                          <img src="${qrCodeImageUrl}" alt="2FA QR Code" style="max-width: 200px; height: auto;" />
                         </div>
                         <p style="margin: 1rem 0; font-size: 0.9em; color: #666;">
-                          Or manually enter this secret:<br>
-                          <strong>${secret}</strong>
+                          Can't scan? Manually enter this secret in your authenticator app:
                         </p>
+                        <div style="background: #f5f5f5; padding: 0.5rem; border-radius: 4px; margin: 1rem 0;">
+                          <code style="font-family: monospace; font-weight: bold;">${secret}</code>
+                        </div>
+                        <div style="font-size: 0.8em; color: #888; margin: 1rem 0;">
+                          <p><strong>Compatible apps:</strong> Google Authenticator, Authy, 1Password, Microsoft Authenticator</p>
+                        </div>
                         <div style="margin-top: 1.5rem;">
-                          <button onclick="this.parentElement.parentElement.parentElement.remove()" 
-                                  style="background: #3b82f6; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
+                          <button onclick="this.parentElement.parentElement.remove()" 
+                                  style="background: #3b82f6; color: white; padding: 0.5rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-size: 1em;">
                             Done
                           </button>
                         </div>
