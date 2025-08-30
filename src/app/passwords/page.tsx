@@ -210,21 +210,24 @@ export default function PasswordsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-200/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+            <div className="flex items-center animate-slideInRight">
               <Link href="/dashboard" className="mr-4">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="icon-button">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Dashboard
                 </Button>
               </Link>
-              <Key className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Password Manager</h1>
+              <div className="icon-button bg-gradient-to-r from-blue-500 to-purple-600 mr-3">
+                <Key className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="heading-2 text-gray-900">Password Manager</h1>
             </div>
             <Button 
-              className="bg-blue-600 hover:bg-blue-700"
+              className="btn-premium animate-slideInRight"
+              style={{animationDelay: '0.2s'}}
               onClick={() => setShowAddForm(true)}
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -409,25 +412,25 @@ export default function PasswordsPage() {
 
         {/* Passwords List */}
         <div className="space-y-4">
-          {filteredPasswords.map((password) => (
-            <Card key={password.id} className="hover:shadow-md transition-shadow">
+          {filteredPasswords.map((password, index) => (
+            <Card key={password.id} className="password-card animate-fadeInUp" style={{animationDelay: `${index * 0.05}s`}}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4 flex-1">
-                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <Key className="h-6 w-6 text-gray-600" />
+                    <div className="icon-button bg-gradient-to-r from-blue-500 to-purple-600 w-12 h-12">
+                      <Key className="h-6 w-6 text-white" />
                     </div>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold text-gray-900 truncate">
+                        <h3 className="heading-2 text-gray-900 truncate">
                           {password.title}
                         </h3>
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStrengthColor(password.strength)}`}>
+                        <span className={`security-badge ${password.strength === 'strong' ? 'badge-secure' : password.strength === 'medium' ? 'badge-warning' : 'badge-danger'}`}>
                           {password.strength}
                         </span>
                         {password.breached && (
-                          <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800">
+                          <span className="security-badge badge-danger flex items-center">
                             <AlertTriangle className="h-3 w-3 mr-1" />
                             Breached
                           </span>
@@ -442,25 +445,38 @@ export default function PasswordsPage() {
                         </div>
                         
                         <div className="flex items-center gap-2">
-                          <strong>Password:</strong>
-                          <span className="font-mono">
-                            {showPassword === password.id ? password.password : '••••••••••••'}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowPassword(showPassword === password.id ? '' : password.id)}
-                          >
-                            {showPassword === password.id ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyToClipboard(password.password)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
+                          <strong className="caption">Password:</strong>
+                          <div className="password-display flex items-center gap-2 flex-1">
+                            <span className="flex-1">
+                              {showPassword === password.id ? password.password : '••••••••••••'}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="icon-button"
+                              onClick={() => setShowPassword(showPassword === password.id ? '' : password.id)}
+                            >
+                              {showPassword === password.id ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="icon-button"
+                              onClick={() => copyToClipboard(password.password)}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
+                        
+                        {showPassword === password.id && (
+                          <div className="mt-2">
+                            <div className="strength-meter">
+                              <div className={`strength-fill strength-${password.strength}`}></div>
+                            </div>
+                            <p className="caption mt-1">Password strength: {password.strength}</p>
+                          </div>
+                        )}
                         
                         <div className="text-xs text-gray-500">
                           Last updated: {new Date(password.lastUpdated).toLocaleDateString()}
@@ -473,6 +489,7 @@ export default function PasswordsPage() {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      className="btn-security"
                       onClick={() => handleEditPassword(password)}
                     >
                       <Edit className="h-4 w-4 mr-1" />
@@ -481,11 +498,10 @@ export default function PasswordsPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-red-600 hover:text-red-700"
+                      className="icon-button text-red-600 hover:text-red-700 hover:bg-red-50"
                       onClick={() => handleDeletePassword(password.id)}
                     >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
