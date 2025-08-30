@@ -220,12 +220,11 @@ export default function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                className="w-full"
-                onClick={() => alert('Security Center coming soon!\n\nThis would include:\n• YubiKey device management\n• Security audit logs\n• Two-factor authentication settings\n• Login history and alerts\n• Security policy configuration')}
-              >
-                Security Settings
-              </Button>
+              <Link href="/security">
+                <Button className="w-full">
+                  Security Settings
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
@@ -259,12 +258,11 @@ export default function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                className="w-full"
-                onClick={() => alert('System Settings coming soon!\n\nThis would include:\n• Account preferences\n• Notification settings\n• Backup configuration\n• Import/Export data\n• Privacy settings')}
-              >
-                Preferences
-              </Button>
+              <Link href="/settings">
+                <Button className="w-full">
+                  Preferences
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

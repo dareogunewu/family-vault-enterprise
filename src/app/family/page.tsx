@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-// import { Badge } from '@/components/ui/badge';
-import { Users, UserPlus, Settings, Shield, Clock, Mail, ArrowLeft, X, Trash2, Edit } from 'lucide-react';
+import { Users, UserPlus, Settings, Shield, Clock, Mail, ArrowLeft, X, Trash2, Edit, Loader } from 'lucide-react';
 import Link from 'next/link';
 
 interface FamilyMember {
@@ -18,9 +19,13 @@ interface FamilyMember {
   joinDate: string;
   lastAccess: string;
   permissions: string[];
+  user_id?: string;
 }
 
 export default function FamilyPage() {
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -32,78 +37,53 @@ export default function FamilyPage() {
     role: 'member' as FamilyMember['role'],
     permissions: [] as string[]
   });
-  // Default family members data
-  const defaultFamilyMembers: FamilyMember[] = [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      role: 'admin',
-      status: 'active',
-      joinDate: '2024-01-01',
-      lastAccess: '2024-01-15',
-      permissions: ['passwords', 'documents', 'family', 'settings', 'emergency']
-    },
-    {
-      id: '2',
-      name: 'Jane Doe',
-      email: 'jane@example.com',
-      role: 'member',
-      status: 'active',
-      joinDate: '2024-01-02',
-      lastAccess: '2024-01-14',
-      permissions: ['passwords', 'documents', 'family']
-    },
-    {
-      id: '3',
-      name: 'Alex Doe',
-      email: 'alex@example.com',
-      role: 'viewer',
-      status: 'active',
-      joinDate: '2024-01-05',
-      lastAccess: '2024-01-13',
-      permissions: ['documents']
-    },
-    {
-      id: '4',
-      name: 'Emma Doe',
-      email: 'emma@example.com',
-      role: 'member',
-      status: 'pending',
-      joinDate: '2024-01-10',
-      lastAccess: 'Never',
-      permissions: ['passwords', 'documents']
-    },
-    {
-      id: '5',
-      name: 'Robert Smith (Lawyer)',
-      email: 'robert.smith@lawfirm.com',
-      role: 'emergency',
-      status: 'active',
-      joinDate: '2024-01-08',
-      lastAccess: '2024-01-12',
-      permissions: ['documents', 'emergency']
-    }
-  ];
+  const router = useRouter();
 
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-
-  // Load family members from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('family-vault-members');
-    if (stored) {
-      setFamilyMembers(JSON.parse(stored));
-    } else {
-      setFamilyMembers(defaultFamilyMembers);
-    }
+    checkAuthAndLoadFamily();
   }, []);
 
-  // Save to localStorage whenever family members change
-  useEffect(() => {
-    if (familyMembers.length > 0) {
-      localStorage.setItem('family-vault-members', JSON.stringify(familyMembers));
+  const checkAuthAndLoadFamily = async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user) {
+        router.push('/auth/login');
+        return;
+      }
+
+      setUser(user);
+      await loadFamilyMembers(user);
+    } catch (error) {
+      console.error('Auth check error:', error);
+      router.push('/auth/login');
     }
-  }, [familyMembers]);
+  };
+
+  const loadFamilyMembers = async (currentUser: any) => {
+    try {
+      // For now, just show the current user as admin
+      // In a real app, this would load from database
+      const currentUserMember: FamilyMember = {
+        id: currentUser.id,
+        name: currentUser.user_metadata?.name || currentUser.email,
+        email: currentUser.email,
+        role: 'admin',
+        status: 'active',
+        joinDate: new Date(currentUser.created_at).toISOString().split('T')[0],
+        lastAccess: 'Today',
+        permissions: ['passwords', 'documents', 'family', 'settings', 'emergency'],
+        user_id: currentUser.id
+      };
+
+      setFamilyMembers([currentUserMember]);
+    } catch (error) {
+      console.error('Error loading family members:', error);
+      setFamilyMembers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const availablePermissions = [
     { id: 'passwords', label: 'Passwords', description: 'Access to password vault' },
@@ -237,6 +217,17 @@ export default function FamilyPage() {
       });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading family members...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
