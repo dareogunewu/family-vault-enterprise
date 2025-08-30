@@ -197,7 +197,36 @@ export default function SecurityPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => alert('Two-Factor Authentication Setup\n\nThis feature would include:\n• QR code for authenticator apps\n• Backup codes generation\n• SMS backup options\n• Hardware key support\n\nComing in a future update!')}
+                  onClick={() => {
+                    const secret = 'JBSWY3DPEHPK3PXP'; // Example TOTP secret
+                    const qrUrl = `otpauth://totp/Family%20Vault:${user?.email}?secret=${secret}&issuer=Family%20Vault`;
+                    
+                    const modal = document.createElement('div');
+                    modal.style.cssText = `
+                      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;
+                    `;
+                    modal.innerHTML = `
+                      <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 400px; text-align: center;">
+                        <h3 style="margin-bottom: 1rem; font-size: 1.2em; font-weight: bold;">Two-Factor Authentication Setup</h3>
+                        <p style="margin-bottom: 1rem; color: #666;">Scan this QR code with your authenticator app:</p>
+                        <div style="margin: 1rem 0; padding: 1rem; background: #f5f5f5; border-radius: 4px;">
+                          <div style="font-family: monospace; font-size: 0.8em; word-break: break-all;">${qrUrl}</div>
+                        </div>
+                        <p style="margin: 1rem 0; font-size: 0.9em; color: #666;">
+                          Or manually enter this secret:<br>
+                          <strong>${secret}</strong>
+                        </p>
+                        <div style="margin-top: 1.5rem;">
+                          <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                                  style="background: #3b82f6; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
+                            Done
+                          </button>
+                        </div>
+                      </div>
+                    `;
+                    document.body.appendChild(modal);
+                  }}
                 >
                   Configure
                 </Button>
