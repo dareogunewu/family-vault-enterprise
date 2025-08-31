@@ -23,8 +23,14 @@ function LoginForm() {
 
   useEffect(() => {
     const message = searchParams.get('message');
+    const timeout = searchParams.get('timeout');
+    
     if (message) {
-      setSuccessMessage(message);
+      if (timeout === 'true') {
+        setError(message);
+      } else {
+        setSuccessMessage(message);
+      }
     }
   }, [searchParams]);
 

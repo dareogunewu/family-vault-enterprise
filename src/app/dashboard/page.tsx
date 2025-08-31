@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { useSession } from '@/hooks/useSession';
+import { SessionWarning } from '@/components/SessionWarning';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Shield, Key, FileText, Users, Activity, Settings, CheckCircle, AlertTriangle, User } from 'lucide-react';
@@ -19,8 +21,7 @@ interface SecurityEvent {
 }
 
 export default function DashboardPage() {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState({
     passwords: 0,
     documents: 0,
@@ -29,9 +30,10 @@ export default function DashboardPage() {
   });
   const [recentEvents, setRecentEvents] = useState<SecurityEvent[]>([]);
   const router = useRouter();
+  const { isAuthenticated, isLoading, showIdleWarning, timeUntilExpiry, extendSession, signOut } = useSession();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const loadUserData = async () => {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
         
@@ -46,13 +48,13 @@ export default function DashboardPage() {
       } catch (error) {
         console.error('Auth check error:', error);
         router.push('/auth/login');
-      } finally {
-        setIsLoading(false);
       }
     };
 
-    checkAuth();
-  }, [router]);
+    if (isAuthenticated) {
+      loadUserData();
+    }
+  }, [isAuthenticated, router]);
 
   const loadUserStats = (userId: string) => {
     try {
@@ -119,7 +121,7 @@ export default function DashboardPage() {
     return date.toLocaleDateString();
   };
 
-  if (isLoading) {
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -128,6 +130,15 @@ export default function DashboardPage() {
   }
 
   return (
+    <>
+      {showIdleWarning && timeUntilExpiry && (
+        <SessionWarning
+          timeUntilExpiry={timeUntilExpiry}
+          onExtendSession={extendSession}
+          onSignOut={signOut}
+        />
+      )}
+      
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-200/50 sticky top-0 z-50">
@@ -150,10 +161,7 @@ export default function DashboardPage() {
                 variant="outline" 
                 size="sm"
                 className="btn-premium"
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  router.push('/auth/login');
-                }}
+                onClick={signOut}
               >
                 Logout
               </Button>
@@ -401,5 +409,6 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
+    </>
   );
 }

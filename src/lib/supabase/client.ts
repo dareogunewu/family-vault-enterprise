@@ -9,11 +9,26 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  // Only throw error if we're in runtime, not during build
+  if (typeof window !== 'undefined') {
+    throw new Error('Missing Supabase environment variables');
+  }
+  // Use placeholder values during build
+  console.warn('Missing Supabase environment variables - using placeholders for build');
 }
 
-// Client-side Supabase client using modern SSR approach
-export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+// Client-side Supabase client using modern SSR approach with session management
+export const supabase = createBrowserClient<Database>(
+  supabaseUrl || 'https://placeholder.supabase.co', 
+  supabaseAnonKey || 'placeholder-key', 
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  }
+);
 
 // Database types for TypeScript
 export type Database = {
