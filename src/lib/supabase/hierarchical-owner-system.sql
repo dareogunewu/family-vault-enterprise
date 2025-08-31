@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.system_owners (
   role VARCHAR(50) DEFAULT 'invited_owner' NOT NULL,
   owner_type VARCHAR(50) DEFAULT 'invited_owner' CHECK (owner_type IN ('super_owner', 'invited_owner')),
   can_invite_owners BOOLEAN DEFAULT false,
-  permissions JSONB DEFAULT '[\"billing\", \"users\", \"analytics\", \"settings\"]'::jsonb,
+  permissions JSONB DEFAULT '["billing", "users", "analytics", "settings"]'::jsonb,
   is_active BOOLEAN DEFAULT true,
   added_by UUID REFERENCES auth.users(id),
   invited_by UUID REFERENCES auth.users(id),
@@ -55,7 +55,7 @@ SELECT
   'super_owner' as owner_type,
   'super_owner' as role,
   true as can_invite_owners,
-  '[\"full_access\", \"billing\", \"users\", \"analytics\", \"settings\", \"owner_management\", \"invite_owners\"]'::jsonb as permissions,
+  '["full_access", "billing", "users", "analytics", "settings", "owner_management", "invite_owners"]'::jsonb as permissions,
   'Super owner - can invite other owners' as notes
 FROM auth.users au
 WHERE au.email = 'dareogunewu@gmail.com'
@@ -63,7 +63,7 @@ ON CONFLICT (user_id) DO UPDATE SET
   owner_type = 'super_owner',
   role = 'super_owner',
   can_invite_owners = true,
-  permissions = '[\"full_access\", \"billing\", \"users\", \"analytics\", \"settings\", \"owner_management\", \"invite_owners\"]'::jsonb,
+  permissions = '["full_access", "billing", "users", "analytics", "settings", "owner_management", "invite_owners"]'::jsonb,
   updated_at = NOW();
 
 -- Step 4: Enhanced function to check if user is system owner (any level)
@@ -147,7 +147,7 @@ BEGIN
       'super_owner'::VARCHAR(50) as role,
       'super_owner'::VARCHAR(50) as owner_type,
       true as can_invite,
-      '[\"full_access\", \"billing\", \"users\", \"analytics\", \"settings\", \"owner_management\", \"invite_owners\"]'::jsonb as permissions,
+      '["full_access", "billing", "users", "analytics", "settings", "owner_management", "invite_owners"]'::jsonb as permissions,
       true as is_super_owner,
       NOW() as added_at,
       (SELECT last_sign_in_at FROM auth.users WHERE id = check_user_id) as last_login;
@@ -176,7 +176,7 @@ CREATE OR REPLACE FUNCTION public.add_system_owner(
   target_email VARCHAR(255),
   target_name VARCHAR(255),
   owner_role VARCHAR(50) DEFAULT 'invited_owner',
-  owner_permissions JSONB DEFAULT '[\"billing\", \"users\", \"analytics\", \"settings\"]'::jsonb,
+  owner_permissions JSONB DEFAULT '["billing", "users", "analytics", "settings"]'::jsonb,
   notes_param TEXT DEFAULT NULL
 )
 RETURNS UUID AS $$
