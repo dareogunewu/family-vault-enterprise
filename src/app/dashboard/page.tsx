@@ -355,6 +355,28 @@ export default function DashboardPage() {
               </Link>
             </CardContent>
           </Card>
+
+          {/* Admin Console Card - Only show for admins */}
+          <Card className="password-card animate-slideInRight cursor-pointer border-2 border-red-200 bg-red-50/50" style={{animationDelay: '0.7s'}}>
+            <CardHeader>
+              <CardTitle className="heading-2 flex items-center text-red-700">
+                <div className="icon-button bg-red-100 mr-3">
+                  <Shield className="h-5 w-5 text-red-600" />
+                </div>
+                Admin Console
+              </CardTitle>
+              <CardDescription className="caption text-red-600">
+                System administration and user management (Admin Only)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/admin">
+                <Button className="w-full bg-red-600 hover:bg-red-700 text-white">
+                  Admin Dashboard
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Recent Activity */}
