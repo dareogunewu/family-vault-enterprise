@@ -72,6 +72,17 @@ interface SystemMetrics {
   database_size_mb: number;
 }
 
+interface SystemOwner {
+  id: string;
+  email: string;
+  name: string;
+  role: 'owner' | 'co_owner' | 'admin';
+  permissions: string[];
+  added_at: string;
+  last_login: string | null;
+  is_active: boolean;
+}
+
 export default function OwnerAdminConsole() {
   const [user, setUser] = useState<any>(null);
   const [isOwner, setIsOwner] = useState(false);
@@ -81,6 +92,9 @@ export default function OwnerAdminConsole() {
   // Data states
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [systemOwners, setSystemOwners] = useState<SystemOwner[]>([]);
+  const [newOwnerEmail, setNewOwnerEmail] = useState('');
+  const [newOwnerName, setNewOwnerName] = useState('');
   const [metrics, setMetrics] = useState<SystemMetrics>({
     total_customers: 0,
     active_customers: 0,
@@ -108,9 +122,9 @@ export default function OwnerAdminConsole() {
 
         setUser(user);
 
-        // Check if user is the system owner (your email)
-        const ownerEmail = 'dareogunewu@gmail.com'; // Your email as system owner
-        const userIsOwner = user.email === ownerEmail;
+        // Check if user is a system owner using database function
+        const { data: ownerCheck } = await supabase.rpc('is_system_owner');
+        const userIsOwner = ownerCheck === true;
         
         if (!userIsOwner) {
           router.push('/dashboard');
@@ -137,7 +151,8 @@ export default function OwnerAdminConsole() {
       await Promise.all([
         loadCustomers(),
         loadSubscriptions(),
-        loadSystemMetrics()
+        loadSystemMetrics(),
+        loadSystemOwners()
       ]);
     } catch (error) {
       console.error('Error loading owner data:', error);
@@ -309,6 +324,83 @@ export default function OwnerAdminConsole() {
     }
   };
 
+  const loadSystemOwners = async () => {
+    try {
+      const { data: owners, error } = await supabase
+        .from('system_owners')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading system owners:', error);
+        return;
+      }
+
+      const ownersData: SystemOwner[] = owners?.map((owner: any) => ({
+        id: owner.id,
+        email: owner.email,
+        name: owner.name,
+        role: owner.role,
+        permissions: owner.permissions || [],
+        added_at: owner.added_at,
+        last_login: owner.last_login,
+        is_active: owner.is_active
+      })) || [];
+
+      setSystemOwners(ownersData);
+    } catch (error) {
+      console.error('Error loading system owners:', error);
+      setSystemOwners([]);
+    }
+  };
+
+  const addSystemOwner = async () => {
+    if (!newOwnerEmail || !newOwnerName) return;
+
+    try {
+      const { error } = await supabase.rpc('add_system_owner', {
+        target_email: newOwnerEmail,
+        target_name: newOwnerName,
+        owner_role: 'co_owner',
+        owner_permissions: ['billing', 'users', 'analytics']
+      });
+
+      if (error) {
+        alert('Error adding system owner: ' + error.message);
+        return;
+      }
+
+      setNewOwnerEmail('');
+      setNewOwnerName('');
+      await loadSystemOwners();
+      alert('System owner added successfully!');
+    } catch (error) {
+      alert('Error adding system owner: ' + error);
+    }
+  };
+
+  const removeSystemOwner = async (email: string) => {
+    if (!confirm(`Remove ${email} as system owner?`)) return;
+
+    try {
+      const { error } = await supabase.rpc('remove_system_owner', {
+        target_email: email,
+        reason: 'Removed via owner console'
+      });
+
+      if (error) {
+        alert('Error removing system owner: ' + error.message);
+        return;
+      }
+
+      await loadSystemOwners();
+      alert('System owner removed successfully!');
+    } catch (error) {
+      alert('Error removing system owner: ' + error);
+    }
+  };
+
   const suspendCustomer = async (customerId: string) => {
     // Implement customer suspension
     console.log('Suspending customer:', customerId);
@@ -456,6 +548,7 @@ export default function OwnerAdminConsole() {
                 { id: 'customers', name: 'Customer Management', icon: Users },
                 { id: 'subscriptions', name: 'Subscriptions & Billing', icon: CreditCard },
                 { id: 'system', name: 'System Health', icon: Server },
+                { id: 'owners', name: 'System Owners', icon: Shield },
                 { id: 'analytics', name: 'Analytics', icon: LineChart }
               ].map((tab) => {
                 const Icon = tab.icon;
@@ -602,6 +695,128 @@ export default function OwnerAdminConsole() {
                               <Button size="sm" variant="outline">
                                 <Settings className="h-4 w-4" />
                               </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'owners' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-foreground">System Owners Management</h2>
+                <div className="space-x-2">
+                  <Button onClick={loadSystemOwners} variant="outline" size="sm">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+
+              {/* Add New Owner */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Add New System Owner</CardTitle>
+                  <CardDescription>Grant another user system owner privileges</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Email Address</label>
+                      <input
+                        type="email"
+                        value={newOwnerEmail}
+                        onChange={(e) => setNewOwnerEmail(e.target.value)}
+                        placeholder="user@example.com"
+                        className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Full Name</label>
+                      <input
+                        type="text"
+                        value={newOwnerName}
+                        onChange={(e) => setNewOwnerName(e.target.value)}
+                        placeholder="John Doe"
+                        className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Button onClick={addSystemOwner} disabled={!newOwnerEmail || !newOwnerName}>
+                      Add System Owner
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Current System Owners */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Current System Owners</CardTitle>
+                  <CardDescription>Users with access to the business management console</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Owner</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Role</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Permissions</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Last Login</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-card divide-y divide-border">
+                        {systemOwners.map((owner) => (
+                          <tr key={owner.id}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-foreground">{owner.name}</div>
+                                <div className="text-sm text-muted-foreground">{owner.email}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Badge variant={owner.role === 'owner' ? 'default' : 'secondary'}>
+                                {owner.role.replace('_', ' ')}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-wrap gap-1">
+                                {owner.permissions.slice(0, 3).map((permission) => (
+                                  <Badge key={permission} variant="outline" className="text-xs">
+                                    {permission}
+                                  </Badge>
+                                ))}
+                                {owner.permissions.length > 3 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{owner.permissions.length - 3} more
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                              {owner.last_login 
+                                ? new Date(owner.last_login).toLocaleDateString()
+                                : 'Never'
+                              }
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              {owner.role !== 'owner' && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => removeSystemOwner(owner.email)}
+                                >
+                                  <UserX className="h-4 w-4" />
+                                </Button>
+                              )}
                             </td>
                           </tr>
                         ))}

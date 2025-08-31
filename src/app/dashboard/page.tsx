@@ -356,28 +356,9 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Owner Console Card - Only show for system owner */}
-          {user?.email === 'dareogunewu@gmail.com' && (
-            <Card className="password-card animate-slideInRight cursor-pointer border-2 border-purple-200 bg-purple-50/50" style={{animationDelay: '0.7s'}}>
-              <CardHeader>
-                <CardTitle className="heading-2 flex items-center text-purple-700">
-                  <div className="icon-button bg-purple-100 mr-3">
-                    <Shield className="h-5 w-5 text-purple-600" />
-                  </div>
-                  Owner Console
-                </CardTitle>
-                <CardDescription className="caption text-purple-600">
-                  SaaS business management - customers, revenue, analytics (Owner Only)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/owner">
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-                    Business Dashboard
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+          {/* Owner Console Card - Only show for system owners */}
+          {user && (
+            <OwnerConsoleCard user={user} />
           )}
         </div>
 
@@ -434,5 +415,54 @@ export default function DashboardPage() {
       </div>
     </div>
     </>
+  );
+}
+
+// Separate component for owner console card with async check
+function OwnerConsoleCard({ user }: { user: any }) {
+  const [isOwner, setIsOwner] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkOwnerStatus = async () => {
+      try {
+        const { data } = await supabase.rpc('is_system_owner');
+        setIsOwner(data === true);
+      } catch (error) {
+        console.error('Error checking owner status:', error);
+        setIsOwner(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkOwnerStatus();
+  }, []);
+
+  if (loading || !isOwner) {
+    return null;
+  }
+
+  return (
+    <Card className="password-card animate-slideInRight cursor-pointer border-2 border-purple-200 bg-purple-50/50" style={{animationDelay: '0.7s'}}>
+      <CardHeader>
+        <CardTitle className="heading-2 flex items-center text-purple-700">
+          <div className="icon-button bg-purple-100 mr-3">
+            <Shield className="h-5 w-5 text-purple-600" />
+          </div>
+          Owner Console
+        </CardTitle>
+        <CardDescription className="caption text-purple-600">
+          SaaS business management - customers, revenue, analytics (Owner Only)
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Link href="/owner">
+          <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+            Business Dashboard
+          </Button>
+        </Link>
+      </CardContent>
+    </Card>
   );
 }
