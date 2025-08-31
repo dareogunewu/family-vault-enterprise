@@ -356,27 +356,29 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Admin Console Card - Only show for admins */}
-          <Card className="password-card animate-slideInRight cursor-pointer border-2 border-red-200 bg-red-50/50" style={{animationDelay: '0.7s'}}>
-            <CardHeader>
-              <CardTitle className="heading-2 flex items-center text-red-700">
-                <div className="icon-button bg-red-100 mr-3">
-                  <Shield className="h-5 w-5 text-red-600" />
-                </div>
-                Admin Console
-              </CardTitle>
-              <CardDescription className="caption text-red-600">
-                System administration and user management (Admin Only)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/admin">
-                <Button className="w-full bg-red-600 hover:bg-red-700 text-white">
-                  Admin Dashboard
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+          {/* Owner Console Card - Only show for system owner */}
+          {user?.email === 'dareogunewu@gmail.com' && (
+            <Card className="password-card animate-slideInRight cursor-pointer border-2 border-purple-200 bg-purple-50/50" style={{animationDelay: '0.7s'}}>
+              <CardHeader>
+                <CardTitle className="heading-2 flex items-center text-purple-700">
+                  <div className="icon-button bg-purple-100 mr-3">
+                    <Shield className="h-5 w-5 text-purple-600" />
+                  </div>
+                  Owner Console
+                </CardTitle>
+                <CardDescription className="caption text-purple-600">
+                  SaaS business management - customers, revenue, analytics (Owner Only)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href="/owner">
+                  <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                    Business Dashboard
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Recent Activity */}
