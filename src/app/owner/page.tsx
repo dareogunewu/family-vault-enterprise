@@ -31,7 +31,8 @@ import {
   LineChart,
   Settings,
   Download,
-  RefreshCw
+  RefreshCw,
+  Home
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -456,24 +457,27 @@ export default function OwnerAdminConsole() {
         />
       )}
       
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         {/* Header */}
-        <header className="bg-card/80 backdrop-blur-lg shadow-sm border-b border-border sticky top-0 z-40">
+        <header className="bg-white/90 backdrop-blur-lg shadow-md border-b border-slate-200 sticky top-0 z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center">
-                <div className="icon-button bg-gradient-to-r from-purple-500 to-indigo-600 mr-3">
+                <Link href="/dashboard" className="mr-4">
+                  <Button variant="outline" size="sm" className="flex items-center gap-2 hover:bg-blue-50 border-blue-200">
+                    <Home className="h-4 w-4" />
+                    Home
+                  </Button>
+                </Link>
+                <div className="icon-button bg-gradient-to-r from-blue-500 to-indigo-600 mr-3">
                   <Crown className="h-6 w-6 text-white" />
                 </div>
-                <h1 className="text-xl font-semibold text-gray-900">Family Vault Enterprise - Owner Console</h1>
+                <h1 className="text-xl font-semibold text-slate-800">Family Vault Enterprise - Owner Console</h1>
               </div>
               <div className="flex items-center space-x-4">
-                <Badge variant="outline" className="text-green-600 border-green-600">
+                <Badge variant="outline" className="text-blue-600 border-blue-600 bg-blue-50">
                   System Owner
                 </Badge>
-                <Link href="/dashboard">
-                  <Button variant="outline" size="sm">User Dashboard</Button>
-                </Link>
                 <Button variant="outline" size="sm" onClick={signOut}>
                   Logout
                 </Button>
@@ -491,9 +495,9 @@ export default function OwnerAdminConsole() {
 
           {/* Revenue & Growth Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <Card className="bg-gradient-to-br from-emerald-50 to-green-100 border-emerald-200 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="flex items-center p-6">
-                <div className="icon-button bg-green-500">
+                <div className="icon-button bg-emerald-500">
                   <DollarSign className="h-6 w-6 text-white" />
                 </div>
                 <div className="ml-4">
@@ -503,9 +507,9 @@ export default function OwnerAdminConsole() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <Card className="bg-gradient-to-br from-sky-50 to-blue-100 border-sky-200 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="flex items-center p-6">
-                <div className="icon-button bg-blue-500">
+                <div className="icon-button bg-sky-500">
                   <Users className="h-6 w-6 text-white" />
                 </div>
                 <div className="ml-4">
@@ -515,9 +519,9 @@ export default function OwnerAdminConsole() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <Card className="bg-gradient-to-br from-violet-50 to-purple-100 border-violet-200 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="flex items-center p-6">
-                <div className="icon-button bg-purple-500">
+                <div className="icon-button bg-violet-500">
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
                 <div className="ml-4">
@@ -527,9 +531,9 @@ export default function OwnerAdminConsole() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+            <Card className="bg-gradient-to-br from-amber-50 to-orange-100 border-amber-200 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="flex items-center p-6">
-                <div className="icon-button bg-orange-500">
+                <div className="icon-button bg-amber-500">
                   <Server className="h-6 w-6 text-white" />
                 </div>
                 <div className="ml-4">
@@ -558,9 +562,9 @@ export default function OwnerAdminConsole() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`${
                       activeTab === tab.id
-                        ? 'border-purple-500 text-purple-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center`}
+                        ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50/50'
+                    } whitespace-nowrap py-2 px-3 border-b-2 font-medium text-sm flex items-center rounded-t-md transition-colors`}
                   >
                     <Icon className="h-4 w-4 mr-2" />
                     {tab.name}
@@ -587,7 +591,7 @@ export default function OwnerAdminConsole() {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Churn Rate</span>
-                        <span className="font-semibold text-red-600">{metrics.churn_rate}%</span>
+                        <span className="font-semibold text-amber-600">{metrics.churn_rate}%</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Trial Conversions</span>
@@ -643,7 +647,7 @@ export default function OwnerAdminConsole() {
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-slate-100">
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
@@ -654,7 +658,7 @@ export default function OwnerAdminConsole() {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                      <tbody className="bg-white divide-y divide-slate-200">
                         {customers.map((customer) => (
                           <tr key={customer.id}>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -764,7 +768,7 @@ export default function OwnerAdminConsole() {
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-muted/50">
+                      <thead className="bg-slate-100">
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Owner</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Role</th>
@@ -773,7 +777,7 @@ export default function OwnerAdminConsole() {
                           <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="bg-card divide-y divide-border">
+                      <tbody className="bg-white divide-y divide-slate-200">
                         {systemOwners.map((owner) => (
                           <tr key={owner.id}>
                             <td className="px-6 py-4 whitespace-nowrap">
